@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Site Stats — Open Plan Interior Development Ltd</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root {
+    --bg: #2b2b2b;
+    --bg-card: #383838;
+    --border: #575757;
+    --text: #f2f0eb;
+    --text-muted: #ddd9d1;
+    --accent: #d4b87c;
+    --accent-light: #e6cf9d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 40px 24px;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  h1 {
+    font-family: 'Cinzel', 'Times New Roman', serif;
+    font-size: 2rem;
+    color: #fff;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .subtitle { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 40px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: 'Cinzel', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
+  .stat-label {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .chart-card h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    color: #fff;
+    margin-bottom: 16px;
+    letter-spacing: 0.03em;
+  }
+  #chart { width: 100%; height: 260px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.04em; }
+  td { color: var(--text); }
+  .meta {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: right;
+    margin-top: 24px;
+  }
+  .loading, .error { color: var(--text-muted); padding: 40px; text-align: center; }
+  .error { color: #e88; }
+  a { color: var(--accent-light); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Site Statistics</h1>
+  <p class="subtitle">openplaninteriordevelopment.co.uk — last 30 days, via Cloudflare</p>
+
+  <div id="content">
+    <p class="loading">Loading stats…</p>
+  </div>
+
+  <p class="meta" id="meta"></p>
+</div>
+
+<script>
+async function loadStats() {
+  const content = document.getElementById('content');
+  try {
+    const res = await fetch('./stats.json?v=' + Date.now());
+    if (!res.ok) throw new Error('stats.json not found (HTTP ' + res.status + ')');
+    const data = await res.json();
+    render(data);
+  } catch (err) {
+    content.innerHTML = '<p class="error">Could not load stats: ' + err.message + '</p>';
+  }
+}
+
+function render(data) {
+  const content = document.getElementById('content');
+  const t = data.totals;
+  const days = data.days || [];
+
+  const fmtBytes = (b) => {
+    if (b > 1e9) return (b / 1e9).toFixed(2) + ' GB';
+    if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
+    if (b > 1e3) return (b / 1e3).toFixed(1) + ' KB';
+    return b + ' B';
+  };
+
+  content.innerHTML = `
+    <div class="grid">
+      <div class="stat-card">
+        <div class="stat-value">${t.requests.toLocaleString()}</div>
+        <div class="stat-label">Total Requests</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${t.uniques.toLocaleString()}</div>
+        <div class="stat-label">Unique Visitors</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${t.pageViews.toLocaleString()}</div>
+        <div class="stat-label">Page Views</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${t.threats.toLocaleString()}</div>
+        <div class="stat-label">Threats Blocked</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${fmtBytes(t.bytes)}</div>
+        <div class="stat-label">Data Served</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h2>Daily Traffic</h2>
+      <svg id="chart" viewBox="0 0 900 260" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div class="chart-card">
+      <h2>Daily Breakdown</h2>
+      <table>
+        <thead><tr><th>Date</th><th>Requests</th><th>Unique Visitors</th><th>Threats</th></tr></thead>
+        <tbody>
+          ${days.slice().reverse().map(d => `
+            <tr>
+              <td>${d.date}</td>
+              <td>${d.requests.toLocaleString()}</td>
+              <td>${d.uniques.toLocaleString()}</td>
+              <td>${d.threats.toLocaleString()}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('meta').textContent =
+    'Last updated: ' + new Date(data.generated_at).toLocaleString();
+
+  drawChart(days);
+}
+
+function drawChart(days) {
+  const svg = document.getElementById('chart');
+  if (!days.length) {
+    svg.innerHTML = '<text x="450" y="130" text-anchor="middle" fill="#ddd9d1" font-size="16">No data yet</text>';
+    return;
+  }
+  const W = 900, H = 260, padL = 40, padB = 30, padT = 20, padR = 10;
+  const maxReq = Math.max(...days.map(d => d.requests), 1);
+  const stepX = (W - padL - padR) / Math.max(days.length - 1, 1);
+
+  const points = days.map((d, i) => {
+    const x = padL + i * stepX;
+    const y = padT + (1 - d.requests / maxReq) * (H - padT - padB);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(f => {
+    const y = padT + f * (H - padT - padB);
+    return `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#575757" stroke-width="1" opacity="0.4"/>`;
+  }).join('');
+
+  svg.innerHTML = `
+    ${gridLines}
+    <polyline points="${points}" fill="none" stroke="#d4b87c" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${days.map((d, i) => {
+      const x = padL + i * stepX;
+      const y = padT + (1 - d.requests / maxReq) * (H - padT - padB);
+      return `<circle cx="${x}" cy="${y}" r="3" fill="#e6cf9d"><title>${d.date}: ${d.requests} requests</title></circle>`;
+    }).join('')}
+  `;
+}
+
+loadStats();
+</script>
+</body>
+</html>
