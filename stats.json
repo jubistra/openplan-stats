@@ -1,23 +1,15 @@
 {
-  "generated_at": "2026-11-23T23:43:21.755924+00:00",
+  "generated_at": "2026-11-24T09:33:40.169511+00:00",
   "zone": "openplaninteriordevelopment.co.uk",
   "range_days": 30,
   "totals": {
-    "requests": 7125,
-    "pageViews": 1456,
-    "uniques": 248,
+    "requests": 7072,
+    "pageViews": 1431,
+    "uniques": 231,
     "threats": 114,
-    "bytes": 6920781
+    "bytes": 6846267
   },
   "days": [
-    {
-      "date": "2026-10-25",
-      "requests": 53,
-      "pageViews": 25,
-      "uniques": 17,
-      "threats": 0,
-      "bytes": 74514
-    },
     {
       "date": "2026-10-26",
       "requests": 21,
